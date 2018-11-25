@@ -31,6 +31,54 @@ $ slcli vs list
 :..........:..........:................:..............:............:........:
 ```
 
+You need to know the password for the first step by calling `slcli vs credentials 65711055` and other VMs as well. 
+
+## Procedures (Local)
+
+We will login to our remote servers for the first time with the passwords. After this step, we try not to use the password, which requires us to setup the ssh `id_rsa` private and public keys. Since hardening the server also requires try not to use the root login, we will then create a user account in each VM we provisioned. 
+
+- 1. create a user in each server 
+- 2. allow the user adminstrative power  
+- 3. allow the username login  
+- 4. change the listening port default 22 to your choice
+- 5. block the password authentication and rootlogin permanently 
+
+From your local computer (laptop), create ssh keys. If done, skip this step. 
+```
+$ ssh-keygen -f ~/.ssh/id_rsa -b 2048 -t rsa 
+$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys 
+$ chmod 600 ~/.ssh/authorized_keys
+```
+Open 3 terminals. Do in each terminal, copy the `id_rsa.pub` to remote servers. 
+```
+$ ssh-copy-id root@184.173.57.205             # Will require the password, enter the password
+$ ssh root@184.173.57.205                     # You no longer need the password in this step
+```
+
+## Configuring in the remote servers (All of the servers)
+The following steps need to be done in all of the servers. You need to execute in each of the server separately. You can do so by opening three terminals. The walkthrough below only shows for one server. 
+
+## 1. Create a user
+```
+$ adduser kenneth
+$ passwd kenneth                              # set the password for the user kenneth
+```
+
+## 2. Allow adminstrator power to the user
+```
+$ vi /etc/sudoers
+
+root	ALL=(ALL) 	ALL                         # default line
+kenneth ALL = NOPASSWD: ALL                   # format username All = NOPASSWD: ALL
+```
+
+## 3. 
+
+AllowUsers root kenneth
+Port 4000
+PasswordAuthentication no
+
+
 
 
 
