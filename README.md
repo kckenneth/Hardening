@@ -37,11 +37,11 @@ You need to know the password for the first step by calling `slcli vs credential
 
 We will login to our remote servers for the first time with the passwords. After this step, we try not to use the password, which requires us to setup the ssh `id_rsa` private and public keys. Since hardening the server also requires try not to use the root login, we will then create a user account in each VM we provisioned. 
 
-- 1. create a user in each server 
-- 2. allow the user adminstrative power  
-- 3. allow the username login  
-- 4. change the listening port default 22 to your choice
-- 5. block the password authentication and rootlogin permanently 
+1. create a user in each server 
+2. allow the user adminstrative power  
+3. allow the username login  
+4. change the listening port default 22 to your choice
+5. block the password authentication and rootlogin permanently 
 
 From your local computer (laptop), create ssh keys. If done, skip this step. 
 ```
