@@ -83,16 +83,8 @@ Everytime you make changes in `sshd_config`, to activate the changes, you need t
 ```
 $ service sshd restart
 ```
-## 5. Block password authentication and rootlogin
-```
-$ vi /etc/ssh/sshd_config
-PasswordAuthentication no                     # change yes to no
-PermitRootLogin no                            # if commented, decomment and change yes to no
 
-$ service sshd restart
-```
-
-Working on remote servers as local
+## Working on remote servers as local  
 The following steps are done from the perspective of the local user. Imagine you're now in the remote server 1, but you want to connect to another remote server2, the server1 becomes the local computer and server2 becomes the remote server. If you're in remote server2 and wants to connect to the server1, the server2 becomes your local computer and server1 become a remote server. Since we want each server communicate freely without password (Hadoop/Spark etc etc), we need to work on every server as `local` and `remote` aspect. 
 
 Now that we have changed the port in every server from the default 22 to 4000, we need to specify the port when we log in. This is an optional step to show you. 
@@ -135,10 +127,75 @@ Host spark3
    HostName spark3
    Port 4000
    User kenneth
+   
+$ chmod 700 ~/.ssh/config
 ```
 The `User` is optional. Since we're setting up the user `kenneth`, we need to specify the user. If you're doing as a `root`, you don't need to add the `User kenneth` line. 
 
+So far we haven't actually establish any connection between 3 of our remote servers. Since have already setup DNS and port, let's try and see if it works. 
 
+### From remote server 1 (spark1)
+We need to setup the `kenneth` ssh password `id_rsa` to establish between all of our servers. This is compulsory. 
+
+```
+$ ssh-keygen -f ~/.ssh/id_rsa -b 2048 -t rsa 
+$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys 
+$ chmod 600 ~/.ssh/authorized_keys
+$ ssh-copy-id spark2                          # Will require kenneth password in spark2, enter the password
+$ ssh-copy-id spark3                          # Will require kenneth password in spark3, enter the password
+$ scp ~/.ssh/* spark2:/home/kenneth/.ssh      # this will copy everything
+$ scp ~/.ssh/* spark3:/home/kenneth/.ssh      
+```
+Now that we have established the user connection in all of our remote servers `AllowUsers`, we also established the `id_rsa` private and public keys in all of the servers, we also configured the port in every remote server `/etc/ssh/sshd_config` and specify which port to use when we login in from our local server `~/.ssh/config`, I think we're now good to check our passwordless connection between each server. First we need to make sure that even spark1 can ssh into its own spark1 without password. 
+```
+[kenneth@spark1 ~]$ ssh spark1                # if this asks ECDSA, enter yes
+```
+If this passes without you to enter the password, we now established the passwordless connection. Ok now we need to test all the servers. 
+```
+$ vi test.sh
+
+#!/bin/bash
+
+# Edit node list
+nodes="spark1 spark2 spark3"
+
+# Test ssh configuration
+for i in $nodes
+do for j in $nodes
+ do echo -n "Testing ${i} to ${j}: "
+ ssh  ${i} "ssh ${j} date"
+ done
+done
+```
+Check the connection
+```
+$ chmod 755 test.sh
+$ ./test.sh
+
+[kenneth@spark1 ~]$ ./test.sh
+Testing spark1 to spark1: Sun Nov 25 14:27:53 CST 2018
+Testing spark1 to spark2: Sun Nov 25 14:27:54 CST 2018
+Testing spark1 to spark3: Sun Nov 25 14:27:55 CST 2018
+Testing spark2 to spark1: Sun Nov 25 14:27:56 CST 2018
+Testing spark2 to spark2: Sun Nov 25 14:27:57 CST 2018
+Testing spark2 to spark3: Sun Nov 25 14:27:57 CST 2018
+Testing spark3 to spark1: Sun Nov 25 14:27:58 CST 2018
+Testing spark3 to spark2: Sun Nov 25 14:27:59 CST 2018
+Testing spark3 to spark3: Sun Nov 25 14:28:00 CST 2018
+```
+If the script generated the above message, we're good to go!
+
+Now that we have established the user login without requiring the password and using the different port, we can now block any of the root login and password authentication. 
+
+## 5. Block password authentication and rootlogin
+Since we're in `kenneth` user account in each server, we need to log out of the user to get back to `root`. This step is very important because if you do that, you will have a strong protection against the server attack. At the same time, you lose your `id_rsa` key, you'll be locked out of your own server and won't be able to connect. For me I only like to use `PasswordAuthentication no` because if in case, I need to change something and need to log back in as a root user, I don't want to be locked out. Anyway, I show how to block the root login as an option. 
+```
+$ vi /etc/ssh/sshd_config
+PasswordAuthentication no                     # change yes to no
+PermitRootLogin no                            # (Optional parameter to change) if commented, decomment and change yes to no
+
+$ service sshd restart
+```
 
 
 
