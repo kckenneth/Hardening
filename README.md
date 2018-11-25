@@ -41,7 +41,7 @@ We will login to our remote servers for the first time with the passwords. After
 2. allow the user adminstrative power  
 3. allow the username login  
 4. change the listening port default 22 to your choice
-5. block the password authentication and rootlogin permanently 
+5. block the password authentication and rootlogin permanently (Very last step until
 
 From your local computer (laptop), create ssh keys. If done, skip this step. 
 ```
@@ -72,11 +72,75 @@ root	ALL=(ALL) 	ALL                         # default line
 kenneth ALL = NOPASSWD: ALL                   # format username All = NOPASSWD: ALL
 ```
 
-## 3. 
+## 3. and 4. Allow username login and change port
+```
+$ vi /etc/ssh/sshd_config
 
-AllowUsers root kenneth
-Port 4000
-PasswordAuthentication no
+AllowUsers root kenneth                       # if not available, create your own
+Port 4000                                     # default 22, if commented, decomment and change the port number
+```
+Everytime you make changes in `sshd_config`, to activate the changes, you need to restart the service. 
+```
+$ service sshd restart
+```
+## 5. Block password authentication and rootlogin
+```
+$ vi /etc/ssh/sshd_config
+PasswordAuthentication no                     # change yes to no
+PermitRootLogin no                            # if commented, decomment and change yes to no
+
+$ service sshd restart
+```
+
+Working on remote servers as local
+The following steps are done from the perspective of the local user. Imagine you're now in the remote server 1, but you want to connect to another remote server2, the server1 becomes the local computer and server2 becomes the remote server. If you're in remote server2 and wants to connect to the server1, the server2 becomes your local computer and server1 become a remote server. Since we want each server communicate freely without password (Hadoop/Spark etc etc), we need to work on every server as `local` and `remote` aspect. 
+
+Now that we have changed the port in every server from the default 22 to 4000, we need to specify the port when we log in. This is an optional step to show you. 
+```
+$ ssh -p 4000 root@IP
+```
+## Local user in Remote Server (All of the servers)
+Since we will be using our username `kenneth`, you now need to login as the user `kenneth`. Do the following in each of the server. 
+```
+$ su - kenneth
+[kenneth@spark1 ~]$
+```
+You're now in the server1 as the user `kenneth`. Everything you make changes will be under the username, not the root. This is important because if you're changing as a `root` admin and want to login to a remote server which is setup for the username `kenneth`, everything will break down. 
+
+Setting up the DNS
+```
+$ vi /etc/hosts
+
+127.0.0.1   localhost.localdomain localhost
+10.76.54.135 spark1.mids.com spark1
+10.76.54.136 spark2.mids.com spark2
+10.76.54.151 spark3.mids.com spark3
+```
+Since we have change the port in all of our servers as root, this requires `anyone` connecting to the servers using the specified port. So now we need to setup the port in username `kenneth` account. 
+
+```
+$ vi ~/.ssh/config
+
+Host spark1
+   HostName spark1
+   Port 4000
+   User kenneth
+
+Host spark2
+   HostName spark2
+   Port 4000
+   User kenneth
+
+Host spark3
+   HostName spark3
+   Port 4000
+   User kenneth
+```
+The `User` is optional. Since we're setting up the user `kenneth`, we need to specify the user. If you're doing as a `root`, you don't need to add the `User kenneth` line. 
+
+
+
+
 
 
 
