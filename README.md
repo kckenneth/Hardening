@@ -1,4 +1,4 @@
-# Hardening
+# Server Hardening
 
 This is a detailed walkthrough on how to harden your server. 
 
@@ -197,6 +197,7 @@ PermitRootLogin no                            # (Optional parameter to change) i
 $ service sshd restart
 ```
 
+Now your server is as strong as a steel fort. 
 
 
 
