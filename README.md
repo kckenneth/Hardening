@@ -199,6 +199,19 @@ $ service sshd restart
 
 Now your server is as strong as a steel fort. 
 
+## Note
+In any of your execution, if you ever got the error message when connecting to a remote server 
+```
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+Testing spark1 to spark1: Bad owner or permissions on /home/kenneth/.ssh/config
+```
+Make sure you change the permission mode in one of your configuration file.
+```
+$ chmod 700 .ssh
+$ chmod 640 ~/.ssh/authorized_keys
+$ chmod 700 ~/.ssh/config
+```
+
 
 
 
